@@ -30,7 +30,15 @@ export function getInitials(name: string) {
 }
 
 export function sortCommitments(commitments: Commitment[]) {
-  return [...commitments].sort((a, b) => a.title.localeCompare(b.title));
+  return [...commitments].sort((a, b) => {
+    // Unpaid (pending) first
+    const aPaid = isCommitmentPaid(a);
+    const bPaid = isCommitmentPaid(b);
+    if (aPaid && !bPaid) return 1;
+    if (!aPaid && bPaid) return -1;
+    // Then alphabetical by title
+    return a.title.localeCompare(b.title);
+  });
 }
 
 export function isCommitmentPaid(commitment: Commitment) {
