@@ -399,7 +399,7 @@ export default function PayCycleApp() {
           onClick={handleTemporaryBypass}
           className="mt-3 flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-slate-200 px-4 font-bold text-[#0f172a] hover:bg-slate-300 transition-colors"
         >
-          Temporary bypass login
+          Demo Account
         </button>
 
         <p className="mt-3.5 text-center text-xs text-[#64748b]">
