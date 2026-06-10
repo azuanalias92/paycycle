@@ -1,1 +1,195 @@
 @import "tailwindcss";
+
+/* ── Neo-brutalism Theme ── */
+@theme {
+  --color-neo-orange: #FF6B35;
+  --color-neo-blue: #3A86FF;
+  --color-neo-purple: #8338EC;
+  --color-neo-dark: #141414;
+  --color-neo-light: #F8F9FA;
+  --color-neo-yellow: #FFBE0B;
+  --color-neo-green: #06D6A0;
+
+  --font-heading: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+/* ── Neo-brutalism Global Styles ── */
+
+body {
+  font-family: var(--font-body);
+  background-color: #F0F2F5;
+  color: var(--color-neo-dark);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+/* ── Neo Component Classes ── */
+
+.neo-card {
+  background-color: #fff;
+  border: 3px solid #141414;
+  box-shadow: 6px 6px 0 #141414;
+  transition: all 0.2s ease;
+}
+
+.neo-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 #141414;
+}
+
+.neo-card-pressed {
+  background-color: #fff;
+  border: 3px solid #141414;
+  box-shadow: 2px 2px 0 #141414;
+  transform: translate(4px, 4px);
+}
+
+.neo-card-paid {
+  background-color: #F0FFF4;
+  border: 3px solid #141414;
+  box-shadow: 6px 6px 0 #141414;
+}
+
+.neo-btn {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  border: 3px solid #141414;
+  box-shadow: 4px 4px 0 #141414;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.neo-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #141414;
+}
+
+.neo-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #141414;
+}
+
+.neo-btn:disabled {
+  opacity: 0.6;
+  transform: none;
+  box-shadow: 4px 4px 0 #141414;
+  cursor: not-allowed;
+}
+
+.neo-btn-primary {
+  background-color: #FF6B35;
+  color: #141414;
+}
+
+.neo-btn-secondary {
+  background-color: #3A86FF;
+  color: #fff;
+}
+
+.neo-btn-light {
+  background-color: #F8F9FA;
+  color: #141414;
+}
+
+.neo-btn-red {
+  background-color: #FEE2E2;
+  color: #991B1B;
+}
+
+.neo-input {
+  border: 3px solid #141414;
+  font-family: var(--font-body);
+  transition: all 0.15s ease;
+  outline: none;
+  box-shadow: 3px 3px 0 #141414;
+}
+
+.neo-input:focus {
+  box-shadow: 5px 5px 0 #141414;
+  transform: translate(-1px, -1px);
+}
+
+.neo-badge {
+  border: 2px solid #141414;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.neo-badge-pending {
+  background-color: #D8EEFE;
+  color: #141414;
+}
+
+.neo-badge-paid {
+  background-color: #D8FFF1;
+  color: #141414;
+}
+
+.neo-avatar {
+  border: 3px solid #141414;
+  box-shadow: 3px 3px 0 #141414;
+}
+
+.neo-fab {
+  background-color: #FF6B35;
+  border: 3px solid #141414;
+  box-shadow: 5px 5px 0 #141414;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neo-fab:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 #141414;
+}
+
+.neo-fab:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 #141414;
+}
+
+.neo-modal {
+  background-color: #fff;
+  border: 3px solid #141414;
+  box-shadow: 8px 8px 0 #141414;
+}
+
+.neo-error {
+  background-color: #FEF2F2;
+  border: 3px solid #141414;
+  box-shadow: 4px 4px 0 #141414;
+}
+
+.neo-summary-card {
+  border: 3px solid #141414;
+  box-shadow: 5px 5px 0 #141414;
+  transition: all 0.2s ease;
+}
+
+.neo-summary-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 #141414;
+}
+
+/* ── Animations ── */
+
+@keyframes neo-slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-neo-slide-up {
+  animation: neo-slide-up 0.3s ease-out;
+}
