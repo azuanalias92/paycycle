@@ -52,8 +52,10 @@ export default function PayCycleApp() {
   const [editingCommitment, setEditingCommitment] = useState<Commitment | null>(null);
   const [form, setForm] = useState<CreateCommitmentForm>(defaultCommitmentForm());
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [swipedId, setSwipedId] = useState<string | null>(null);
 
   const sessionRef = useRef<StoredSession | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // ── Session persistence ──
   const updateSession = useCallback((next: StoredSession | null) => {
@@ -520,45 +522,51 @@ export default function PayCycleApp() {
             </p>
           </div>
         ) : (
-          <div className="mt-3 space-y-3">
+          <SwipeList
+            listRef={listRef}
+            swipedId={swipedId}
+            setSwipedId={setSwipedId}
+          >
             {commitments.map((commitment) => {
               const remaining = Math.max(commitment.amount - commitment.paid_amount, 0);
               const isBusy = payingCommitmentId === commitment.id;
               const paid = isCommitmentPaid(commitment);
+              const isOpen = swipedId === commitment.id;
 
               return (
-                <div key={commitment.id} className="relative group">
-                  {/* Edit/Delete overlay */}
-                  <div className="absolute inset-0 z-10 hidden group-hover:flex items-center justify-end gap-2 rounded-none px-4"
-                    style={{
-                      border: "3px solid #141414",
-                      backgroundColor: "rgba(255, 107, 53, 0.1)",
-                    }}
-                  >
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openEditModal(commitment); }}
-                      className="neo-btn neo-btn-primary flex items-center gap-1.5 px-4 py-2 text-sm"
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(commitment); }}
-                      className="neo-btn neo-btn-red flex items-center gap-1.5 px-4 py-2 text-sm shadow-none"
-                      style={{ boxShadow: "4px 4px 0 #141414" }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* Card */}
+                <SwipeableCard
+                  key={commitment.id}
+                  commitmentId={commitment.id}
+                  isOpen={isOpen}
+                  onOpen={() => setSwipedId(commitment.id)}
+                  onClose={() => setSwipedId(null)}
+                  actions={
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEditModal(commitment); }}
+                        className="neo-btn neo-btn-primary flex items-center gap-1.5 px-4 py-2 text-sm"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(commitment); }}
+                        className="neo-btn neo-btn-red flex items-center gap-1.5 px-4 py-2 text-sm shadow-none"
+                        style={{ boxShadow: "4px 4px 0 #141414" }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </>
+                  }
+                >
                   <button
-                    onClick={() => handleMarkAsPaid(commitment)}
+                    onClick={() => {
+                      if (isOpen) { setSwipedId(null); return; }
+                      handleMarkAsPaid(commitment);
+                    }}
                     disabled={paid || isBusy}
-                    className={`w-full text-left transition-all disabled:opacity-100 ${
-                      paid
-                        ? "neo-card-paid"
-                        : "neo-card"
+                    className={`w-full text-left transition-transform duration-200 disabled:opacity-100 ${
+                      paid ? "neo-card-paid" : "neo-card"
                     } ${isBusy ? "neo-card-pressed" : ""} p-4`}
                   >
                     <div className="flex items-start justify-between gap-2.5">
@@ -614,10 +622,10 @@ export default function PayCycleApp() {
                       </div>
                     )}
                   </button>
-                </div>
+                </SwipeableCard>
               );
             })}
-          </div>
+          </SwipeList>
         )}
       </div>
 
@@ -714,6 +722,151 @@ function SummaryCard({ label, value, color }: { label: string; value: string; co
       <p className="mt-1 text-lg font-bold text-[#141414]" style={{ fontFamily: "var(--font-heading)" }}>
         {value}
       </p>
+    </div>
+  );
+}
+
+// ── Swipeable list components ──
+
+const SWIPE_THRESHOLD = 80; // px to trigger open
+const SWIPE_VELOCITY_THRESHOLD = 0.4; // px/ms
+
+function SwipeList({
+  children,
+  swipedId,
+  setSwipedId,
+  listRef,
+}: {
+  children: React.ReactNode;
+  swipedId: string | null;
+  setSwipedId: (id: string | null) => void;
+  listRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  // Close any open swipe when tapping outside the list
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (listRef.current && !listRef.current.contains(e.target as Node)) {
+        setSwipedId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [listRef, setSwipedId]);
+
+  return (
+    <div ref={listRef} className="mt-3 space-y-3">
+      {children}
+    </div>
+  );
+}
+
+function SwipeableCard({
+  children,
+  commitmentId,
+  isOpen,
+  onOpen,
+  onClose,
+  actions,
+}: {
+  children: React.ReactNode;
+  commitmentId: string;
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  actions: React.ReactNode;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const startX = useRef(0);
+  const currentX = useRef(0);
+  const dragging = useRef(false);
+  const [offset, setOffset] = useState(0);
+  const wasOpen = useRef(false);
+
+  // Measure action buttons width for snap target
+  const actionsWidth = useRef(160); // default
+
+  useEffect(() => {
+    if (isOpen) {
+      // measure actual buttons width
+      const el = cardRef.current;
+      if (el) {
+        const actionsEl = el.querySelector("[data-actions]") as HTMLElement;
+        if (actionsEl) actionsWidth.current = actionsEl.offsetWidth;
+      }
+      setOffset(-actionsWidth.current);
+    } else {
+      setOffset(0);
+    }
+  }, [isOpen]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    dragging.current = true;
+    wasOpen.current = isOpen;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!dragging.current) return;
+    currentX.current = e.touches[0].clientX;
+    const diff = currentX.current - startX.current;
+
+    // Only allow left swipe (negative diff)
+    if (wasOpen.current) {
+      // When open, allow swiping back right
+      setOffset(Math.min(0, -actionsWidth.current + diff));
+    } else {
+      // When closed, only swipe left
+      setOffset(Math.min(0, Math.max(-actionsWidth.current * 1.3, diff)));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!dragging.current) return;
+    dragging.current = false;
+
+    const diff = currentX.current - startX.current;
+
+    if (wasOpen.current) {
+      // Close if swiped right past threshold
+      if (diff > SWIPE_THRESHOLD) {
+        onClose();
+      } else {
+        onOpen(); // snap back open
+      }
+    } else {
+      // Open if swiped left past threshold
+      if (diff < -SWIPE_THRESHOLD) {
+        onOpen();
+      } else {
+        onClose(); // snap back closed
+      }
+    }
+  };
+
+  return (
+    <div className="relative overflow-hidden" ref={cardRef}>
+      {/* Action buttons behind the card */}
+      <div
+        data-actions
+        className="absolute inset-y-0 right-0 z-0 flex items-center gap-2 px-4"
+        style={{
+          backgroundColor: "rgba(255, 107, 53, 0.1)",
+          border: "3px solid #141414",
+        }}
+      >
+        {actions}
+      </div>
+
+      {/* Card slides over actions */}
+      <div
+        className="relative z-10 transition-transform duration-200 ease-out"
+        style={{ transform: `translateX(${offset}px)` }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {children}
+      </div>
     </div>
   );
 }
