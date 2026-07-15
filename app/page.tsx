@@ -738,6 +738,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Loan: "#FF6B35",
   Bill: "#3A86FF",
   Saving: "#06D6A0",
+  Gift: "#FFBE0B",
   Other: "#8338EC",
 };
 

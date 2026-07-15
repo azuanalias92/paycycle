@@ -83,7 +83,7 @@ export function cn(...classes: (string | boolean | undefined | null)[]) {
 import type { Commitment } from "./types";
 
 // ── Categories ──
-export const CATEGORIES = ["Loan", "Bill", "Saving"] as const;
+export const CATEGORIES = ["Loan", "Bill", "Saving", "Gift"] as const;
 export type CategoryTag = (typeof CATEGORIES)[number];
 
 export function getCategoryBreakdown(commitments: Commitment[]) {
