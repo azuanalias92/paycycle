@@ -741,6 +741,39 @@ const CATEGORY_COLORS: Record<string, string> = {
   Other: "#8338EC",
 };
 
+const PIE_RADIUS = 54;
+const PIE_CIRCUMFERENCE = 2 * Math.PI * PIE_RADIUS;
+
+function PieSlice({
+  percentage,
+  cumulativePercent,
+  color,
+}: {
+  percentage: number;
+  cumulativePercent: number;
+  color: string;
+}) {
+  if (percentage <= 0) return null;
+  const dashLength = (percentage / 100) * PIE_CIRCUMFERENCE;
+  const dashGap = PIE_CIRCUMFERENCE - dashLength;
+  const rotation = (cumulativePercent / 100) * 360 - 90;
+
+  return (
+    <circle
+      cx="64"
+      cy="64"
+      r={PIE_RADIUS}
+      fill="none"
+      stroke={color}
+      strokeWidth="14"
+      strokeDasharray={`${dashLength} ${dashGap}`}
+      strokeDashoffset="0"
+      transform={`rotate(${rotation} 64 64)`}
+      className="transition-all duration-500"
+    />
+  );
+}
+
 function CategoryBreakdown({ commitments }: { commitments: Commitment[] }) {
   const { totalAmount, breakdown } = useMemo(
     () => getCategoryBreakdown(commitments),
@@ -748,35 +781,61 @@ function CategoryBreakdown({ commitments }: { commitments: Commitment[] }) {
   );
 
   const entries = Object.entries(breakdown);
+  let cumulative = 0;
 
   return (
     <div className="mt-5">
       <h2 className="text-lg font-bold text-[#141414]" style={{ fontFamily: "var(--font-heading)" }}>
         Category breakdown
       </h2>
-      <div className="neo-card mt-3 p-4">
+      <div className="neo-card mt-3 p-5">
         {totalAmount === 0 ? (
           <p className="text-sm text-[#64748b]">No commitments to show.</p>
         ) : (
-          <div className="space-y-3">
-            {/* Percentage bar */}
-            <div className="flex h-3 w-full overflow-hidden rounded-none border-2 border-[#141414]">
-              {entries.map(([cat, data]) => {
-                if (data.percentage === 0) return null;
-                return (
-                  <div
-                    key={cat}
-                    className="h-full"
-                    style={{
-                      width: `${data.percentage}%`,
-                      backgroundColor: CATEGORY_COLORS[cat] ?? "#94A3B8",
-                    }}
-                  />
-                );
-              })}
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+            {/* Donut chart */}
+            <div className="shrink-0">
+              <svg width="128" height="128" viewBox="0 0 128 128">
+                {entries
+                  .filter(([, d]) => d.percentage > 0)
+                  .map(([cat, data]) => {
+                    const startPercent = cumulative;
+                    cumulative += data.percentage;
+                    return (
+                      <PieSlice
+                        key={cat}
+                        percentage={data.percentage}
+                        cumulativePercent={startPercent}
+                        color={CATEGORY_COLORS[cat] ?? "#94A3B8"}
+                      />
+                    );
+                  })}
+                {/* Center label */}
+                <text
+                  x="64"
+                  y="60"
+                  textAnchor="middle"
+                  className="text-[10px] fill-[#64748b]"
+                  fontFamily="var(--font-heading)"
+                  fontWeight={700}
+                >
+                  TOTAL
+                </text>
+                <text
+                  x="64"
+                  y="76"
+                  textAnchor="middle"
+                  className="text-lg fill-[#141414]"
+                  fontFamily="var(--font-heading)"
+                  fontWeight={700}
+                >
+                  {formatCurrency(totalAmount)}
+                </text>
+              </svg>
             </div>
+
             {/* Legend */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex-1 space-y-2 w-full">
               {entries.map(([cat, data]) => (
                 <div key={cat} className="flex items-center gap-2">
                   <div
