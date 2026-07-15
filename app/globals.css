@@ -183,6 +183,33 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 7px 7px 0 #141414;
 }
 
+/* ── Category Tags ── */
+
+.neo-category-tag {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  padding: 8px 16px;
+  border: 3px solid #141414;
+  background-color: #F8F9FA;
+  color: #141414;
+  box-shadow: 3px 3px 0 #141414;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.neo-category-tag:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #141414;
+}
+
+.neo-category-tag-active {
+  background-color: #141414;
+  color: #fff;
+  box-shadow: 1px 1px 0 #141414;
+  transform: translate(2px, 2px);
+}
+
 /* ── Animations ── */
 
 @keyframes neo-slide-up {

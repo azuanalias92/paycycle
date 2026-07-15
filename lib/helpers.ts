@@ -81,3 +81,35 @@ export function cn(...classes: (string | boolean | undefined | null)[]) {
 }
 
 import type { Commitment } from "./types";
+
+// ── Categories ──
+export const CATEGORIES = ["Loan", "Bill", "Saving"] as const;
+export type CategoryTag = (typeof CATEGORIES)[number];
+
+export function getCategoryBreakdown(commitments: Commitment[]) {
+  const totalAmount = commitments.reduce((s, c) => s + c.amount, 0);
+
+  const breakdown: Record<string, { amount: number; percentage: number }> = {};
+
+  for (const cat of CATEGORIES) {
+    const amount = commitments
+      .filter((c) => (c.category ?? "").toLowerCase() === cat.toLowerCase())
+      .reduce((s, c) => s + c.amount, 0);
+    breakdown[cat] = {
+      amount,
+      percentage: totalAmount > 0 ? Math.round((amount / totalAmount) * 100) : 0,
+    };
+  }
+
+  // Uncategorized / other
+  const categorized = Object.values(breakdown).reduce((s, v) => s + v.amount, 0);
+  const otherAmount = totalAmount - categorized;
+  if (otherAmount > 0 || totalAmount === 0) {
+    breakdown["Other"] = {
+      amount: otherAmount,
+      percentage: totalAmount > 0 ? Math.round((otherAmount / totalAmount) * 100) : 0,
+    };
+  }
+
+  return { totalAmount, breakdown };
+}

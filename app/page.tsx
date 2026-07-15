@@ -2,13 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Commitment, CreateCommitmentForm, StoredSession } from "@/lib/types";
-import {
-  formatCurrency,
-  formatMonthYear,
-  getInitials,
-  sortCommitments,
-  isCommitmentPaid,
-} from "@/lib/helpers";
+import { cn, formatCurrency, formatMonthYear, getInitials, sortCommitments, isCommitmentPaid, CATEGORIES, getCategoryBreakdown } from "@/lib/helpers";
 import {
   getSession,
   setSession,
@@ -507,6 +501,9 @@ export default function PayCycleApp() {
         </p>
       </div>
 
+      {/* Category Breakdown */}
+      <CategoryBreakdown commitments={commitments} />
+
       {/* List */}
       <div className="mt-5">
         <div className="flex items-center justify-between">
@@ -684,12 +681,21 @@ export default function PayCycleApp() {
               </div>
               <div>
                 <label className="mb-2 block text-sm font-bold text-[#141414]" style={{ fontFamily: "var(--font-heading)" }}>Category</label>
-                <input
-                  placeholder="Utilities"
-                  className="neo-input w-full px-4 py-3 text-sm text-[#141414]"
-                  value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                />
+                <div className="flex gap-2">
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, category: f.category === cat ? "" : cat }))}
+                      className={cn(
+                        "neo-category-tag",
+                        form.category === cat && "neo-category-tag-active"
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -722,6 +728,71 @@ function SummaryCard({ label, value, color }: { label: string; value: string; co
       <p className="mt-1 text-lg font-bold text-[#141414]" style={{ fontFamily: "var(--font-heading)" }}>
         {value}
       </p>
+    </div>
+  );
+}
+
+// ── Category Breakdown ──
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Loan: "#FF6B35",
+  Bill: "#3A86FF",
+  Saving: "#06D6A0",
+  Other: "#8338EC",
+};
+
+function CategoryBreakdown({ commitments }: { commitments: Commitment[] }) {
+  const { totalAmount, breakdown } = useMemo(
+    () => getCategoryBreakdown(commitments),
+    [commitments]
+  );
+
+  const entries = Object.entries(breakdown);
+
+  return (
+    <div className="mt-5">
+      <h2 className="text-lg font-bold text-[#141414]" style={{ fontFamily: "var(--font-heading)" }}>
+        Category breakdown
+      </h2>
+      <div className="neo-card mt-3 p-4">
+        {totalAmount === 0 ? (
+          <p className="text-sm text-[#64748b]">No commitments to show.</p>
+        ) : (
+          <div className="space-y-3">
+            {/* Percentage bar */}
+            <div className="flex h-3 w-full overflow-hidden rounded-none border-2 border-[#141414]">
+              {entries.map(([cat, data]) => {
+                if (data.percentage === 0) return null;
+                return (
+                  <div
+                    key={cat}
+                    className="h-full"
+                    style={{
+                      width: `${data.percentage}%`,
+                      backgroundColor: CATEGORY_COLORS[cat] ?? "#94A3B8",
+                    }}
+                  />
+                );
+              })}
+            </div>
+            {/* Legend */}
+            <div className="grid grid-cols-2 gap-2">
+              {entries.map(([cat, data]) => (
+                <div key={cat} className="flex items-center gap-2">
+                  <div
+                    className="h-3 w-3 shrink-0 border border-[#141414]"
+                    style={{ backgroundColor: CATEGORY_COLORS[cat] ?? "#94A3B8" }}
+                  />
+                  <span className="text-xs text-[#64748b]">{cat}</span>
+                  <span className="ml-auto text-xs font-bold text-[#141414]" style={{ fontFamily: "var(--font-heading)" }}>
+                    {formatCurrency(data.amount)} ({data.percentage}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
